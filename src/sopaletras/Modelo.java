@@ -9,6 +9,8 @@ public class Modelo {
 
     private List<String> palabras;
     private Connection connection;
+    private boolean duplicateEntryError;
+    private boolean limite;
 
     public Modelo() {
         palabras = new ArrayList<>(); // Inicializar la lista de palabras
@@ -26,20 +28,48 @@ public class Modelo {
             e.printStackTrace();
         }
     }
+    public boolean isDuplicateEntryError() {
+        return duplicateEntryError;
+    }
+    public boolean esLimite(){
+          return limite;
+    }
+         
+    
 
-    public void agregarPalabra(String palabra) {
-        try {
-            // Preparar la consulta SQL para insertar la palabra en la tabla correspondiente
-            String sql = "INSERT INTO palabras (palabra) VALUES (?)";
-            PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setString(1, palabra);
+public void agregarPalabra(String palabra) {
+    try {
+        // Reiniciar la variable booleana antes de la operación
+        duplicateEntryError = false;
+        limite= false;
+        String palabraFinal = palabra.toUpperCase();
 
-            // Ejecutar la consulta SQL para insertar la palabra
-            statement.executeUpdate();
-        } catch (SQLException e) {
+        // Preparar la consulta SQL para insertar la palabra en la tabla correspondiente
+        String sql = "INSERT INTO palabras (palabra) VALUES (?)";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, palabraFinal);
+        
+        // Ejecutar la consulta SQL para insertar la palabra
+        statement.executeUpdate();
+    } catch (SQLIntegrityConstraintViolationException e) {
+        if (e.getErrorCode() == 1062) {
+            // Capturar la excepción específica de entrada duplicada
+            duplicateEntryError = true;
+        } else {
             e.printStackTrace();
         }
+    } catch (SQLException e) {
+        if (e.getErrorCode() == 1644) {
+            // Manejar el error específico de límite máximo de elementos en la tabla
+            System.out.println("Se ha alcanzado el límite máximo de elementos en la tabla.");
+            limite = true;
+        } else {
+            e.printStackTrace();
+        }
+        
     }
+}
+
 
     public void eliminarPalabra(String palabra) {
         try {

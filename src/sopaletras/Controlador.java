@@ -3,6 +3,7 @@ package sopaletras;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import javax.swing.JOptionPane;
 
 public class Controlador {
 
@@ -25,21 +26,28 @@ public class Controlador {
     }
 
     private void agregarPalabra() {
-        // Obtener la palabra ingresada desde la vista
-        String pal = vista.getTextFieldValue();
-        String palabra = pal.toUpperCase();
+        String palabra = vista.getTextFieldValue().trim(); // Eliminar espacios en blanco al inicio y al final
+        String palabraFinal = palabra.toUpperCase();
 
-        // Agregar la palabra al modelo
-        modelo.agregarPalabra(palabra);
+        // Validar que la palabra no tenga caracteres especiales ni espacios y tenga un máximo de 15 caracteres
+        if (!palabra.matches("[a-zA-ZñÑáéíóúÁÉÍÓÚüÜ]+")) {
+            JOptionPane.showMessageDialog(vista, "La palabra solo puede contener letras sin espacios ni caracteres especiales.", "Error", JOptionPane.WARNING_MESSAGE);
 
-        // Agregar la palabra a la vista
-        vista.addWordToList(palabra);
+        } else if (palabra.length() > 15) {
+            JOptionPane.showMessageDialog(vista, "La palabra no puede contener más de 15 caracteres. Elimine una si quiere agregar otra", "Error", JOptionPane.ERROR_MESSAGE);
+        } else {
+            modelo.agregarPalabra(palabra);
 
-        // Limpiar el campo de texto después de agregar la palabra
-        vista.clearTextField();
-
-        // Habilitar el botón de generar sopa si hay palabras ingresadas
-        vista.setGenerateButtonEnabled(true);
+            if (modelo.isDuplicateEntryError()) {
+                // Manejar la acción cuando se detecta una entrada duplicada
+                JOptionPane.showMessageDialog(vista, "La palabra ya existe en la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
+            } else if (modelo.esLimite() == true) {
+                JOptionPane.showMessageDialog(vista, "No se pueden agregar mas palabras .", "Error", JOptionPane.ERROR_MESSAGE);
+            } else {
+                vista.addWordToList(palabraFinal);
+                vista.clearTextField();
+            }
+        }
     }
 
     private void eliminarPalabra() {
@@ -82,7 +90,8 @@ public class Controlador {
         // Actualizar el estado del botón de generar sopa
         actualizarEstadoBotonGenerar();
     }
-        private void actualizarEstadoBotonGenerar() {
+
+    private void actualizarEstadoBotonGenerar() {
         // Obtener las palabras ingresadas desde la vista
         String[] palabrasIngresadas = vista.getPalabras();
 

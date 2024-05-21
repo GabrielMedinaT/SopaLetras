@@ -6,6 +6,9 @@ public class Main {
         Vista vista = new Vista();
         Controlador controlador = new Controlador(modelo, vista);
         
+        modelo.crearTabla();
+     
+        controlador.iniciarPArtida();
         // Hacer visible la vista
         vista.setVisible(true);
     }

@@ -23,6 +23,23 @@ public class Controlador {
         vista.addConsultButtonListener(e -> consultarPalabra());
         vista.addGenerateButtonListener(e -> generarSopa());
         vista.setGenerateButtonEnabled(generar);
+        vista.addVaciarListaListener(e -> vaciarTabla());
+    }
+
+
+    //metodo vaciar tabla de la base de datos
+    public void vaciarTabla() {
+        modelo.vaciarPalabras();
+        consultarPalabra();
+        
+    }
+   public void iniciarPArtida(){
+        modelo.crearTabla();
+        modelo.vaciarPalabras();
+        modelo.insertarPalabrasInicio();
+        consultarPalabra();
+        generarSopa();
+        
     }
 
     private void agregarPalabra() {

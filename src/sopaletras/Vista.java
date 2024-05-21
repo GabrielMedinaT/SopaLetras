@@ -2,7 +2,18 @@ package sopaletras;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
 import java.util.List;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Highlighter;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Element;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 public class Vista extends JFrame {
 
@@ -11,16 +22,22 @@ public class Vista extends JFrame {
     private final JButton deleteButton;
     private final JButton generarSopa;
     private final JButton consultarBaseDatos;
-    private final JTextArea textArea;
+    private final JTextPane textArea;
+    private final JButton vaciarLista;
     private final JList<String> wordList; // Cambiado a JList<String>
     private final DefaultListModel<String> listModel;
+    private final JButton botonSolucion;
+    private Modelo modelo;
+    private int lastSelectedIndex = -1;
 
     public Vista() {
         // Configuración de la ventana principal
         setTitle("Sopa de Letras");
-        setSize(1280, 720);
+        setSize(1280, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+        
+        
 
         // Panel izquierdo para la entrada de palabras y botones
         JPanel leftPanel = new JPanel();
@@ -57,11 +74,19 @@ public class Vista extends JFrame {
         gbc.gridwidth = 2;
         leftPanel.add(consultarBaseDatos, gbc);
 
+        // Botón Vaciar Lista
+        vaciarLista = new JButton("Vaciar Lista");
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 2;
+        leftPanel.add(vaciarLista, gbc);
+
+
         // Lista de palabras (JList)
         listModel = new DefaultListModel<>();
         wordList = new JList<>(listModel);
         JScrollPane listScrollPane = new JScrollPane(wordList);
-        gbc.gridy = 4;
+        gbc.gridy = 5;
         gbc.weighty = 1;
         gbc.fill = GridBagConstraints.BOTH;
         leftPanel.add(listScrollPane, gbc);
@@ -75,15 +100,65 @@ public class Vista extends JFrame {
         generarSopa = new JButton("Generar Sopa Letras");
         rightPanel.add(generarSopa, BorderLayout.NORTH);
 
-        textArea = new JTextArea();
+        botonSolucion = new JButton("Solucion");
+        rightPanel.add(botonSolucion, BorderLayout.SOUTH);
+
+        textArea = new JTextPane();
         textArea.setFont(new Font("Monospaced", Font.PLAIN, 28));
         textArea.setEditable(false);
         JScrollPane textScrollPane = new JScrollPane(textArea);
+        
         rightPanel.add(textScrollPane, BorderLayout.CENTER);
 
         add(rightPanel, BorderLayout.CENTER);
+
+        
+
+        add(rightPanel, BorderLayout.CENTER);
+
+        
+        textArea.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                JTextPane source = (JTextPane) e.getSource();
+                int offset = source.viewToModel2D(e.getPoint());
+
+                try {
+                    StyledDocument doc = source.getStyledDocument();
+                    Element element = doc.getCharacterElement(offset);
+                    AttributeSet as = element.getAttributes();
+                    Color currentColor = StyleConstants.getForeground(as);
+
+                    // Create a new style
+                    SimpleAttributeSet newStyle = new SimpleAttributeSet();
+                    if (Color.RED.equals(currentColor)) {
+                        // Revert to default color
+                        StyleConstants.setForeground(newStyle, Color.BLACK);
+                    } else {
+                        // Change to red color
+                        StyleConstants.setForeground(newStyle, Color.RED);
+                    }
+
+                    // Apply the new style to the letter
+                    doc.setCharacterAttributes(offset, 1, newStyle, false);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        
+        
+        
+        
+        
+
+        
+        
     }
 
+    
+    
+    
 public String[] getPalabras() {
     // Obtiene todas las palabras en la lista
     ListModel<String> listModel = wordList.getModel();
@@ -152,4 +227,18 @@ public String[] getPalabras() {
     public String getSelectedWord() {
         return wordList.getSelectedValue();
     }
+
+    public void addVaciarListaListener(ActionListener listener) {
+        vaciarLista.addActionListener(listener);
+
+    }
+
+    public void addWindowCloseListener(WindowAdapter windowAdapter) {
+        addWindowListener(windowAdapter);
+    }
+    //al cerrar se vacia la basededatos
+    
+    // onclick de vaciarlista 
+
+    
 }

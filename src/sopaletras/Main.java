@@ -8,7 +8,7 @@ public class Main {
         
         modelo.crearTabla();
      
-        controlador.iniciarPArtida();
+        controlador.iniciarPartida();
         // Hacer visible la vista
         vista.setVisible(true);
     }

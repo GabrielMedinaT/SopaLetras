@@ -13,8 +13,14 @@ public class Modelo {
     private Connection connection;
     private boolean duplicateEntryError;
     private boolean limite;
-    //array de 20 palabras para el juego
-    private String[] palabrasJuego = (new String[]{"CASA", "PERRO", "GATO", "COCHE", "MOTO", "BICI", "MESA", "SILLA", "CAMA", "PUERTA", "VENTANA", "TELEVISOR", "ORDENADOR", "LAPIZ", "BOLIGRAFO", "LIBRO", "CUADERNO", "MOVIL", "RELOJ", "PANTALLA", "COCINA", "BAÑO", "SALON", "DORMITORIO", "JARDIN", "PISCINA", "GARAJE", "TRASTERO", "TERRAZA", "BALCON", "AZOTEA", "PATIO", "PASILLO", "SOTANO", "BUHARDILLA", "COCINA", "BAÑO", "SALON", "DORMITORIO", "JARDIN", "PISCINA", "GARAJE", "TRASTERO", "TERRAZA", "BALCON", "AZOTEA", "PATIO", "PASILLO", "SOTANO", "BUHARDILLA"});
+    // Array de palabras predefinidas para el juego
+    private String[] palabrasJuego = {
+        "CASA", "PERRO", "GATO", "COCHE", "MOTO", "BICI", "MESA", "SILLA", "CAMA", 
+        "PUERTA", "VENTANA", "TELEVISOR", "ORDENADOR", "LAPIZ", "BOLIGRAFO", "LIBRO", 
+        "CUADERNO", "MOVIL", "RELOJ", "PANTALLA", "COCINA", "BAÑO", "SALON", 
+        "DORMITORIO", "JARDIN", "PISCINA", "GARAJE", "TRASTERO", "TERRAZA", "BALCON", 
+        "AZOTEA", "PATIO", "PASILLO", "SOTANO", "BUHARDILLA"
+    };
 
     public Modelo() {
         palabras = new ArrayList<>(); // Inicializar la lista de palabras
@@ -23,7 +29,7 @@ public class Modelo {
             // Cargar el controlador JDBC
             Class.forName("org.mariadb.jdbc.Driver");
 
-            // Establecer la conexión con la base de datos (reemplaza los valores con los de tu propia base de datos)
+            // Establecer la conexión con la base de datos
             String url = "jdbc:mariadb://localhost:3306/sopaletras";
             String usuario = "root";
             String contraseña = "root1234";
@@ -38,7 +44,6 @@ public class Modelo {
             // Preparar la consulta SQL para crear la tabla correspondiente
             String sql = "CREATE TABLE IF NOT EXISTS palabras (palabra VARCHAR(15) UNIQUE)";
             PreparedStatement statement = connection.prepareStatement(sql);
-
             // Ejecutar la consulta SQL para crear la tabla
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -46,19 +51,18 @@ public class Modelo {
         }
     }
 
-    //crear trigger
     public void insertarPalabrasInicio() {
         List<String> listaPalabras = Arrays.asList(palabrasJuego);
         Collections.shuffle(listaPalabras);
         List<String> palabrasSeleccionadas = listaPalabras.subList(0, 10);
-    
+
         System.out.println("Palabras seleccionadas: " + palabrasSeleccionadas); // Imprimir las palabras seleccionadas
-    
+
         try {
             // Preparar la consulta SQL para insertar las palabras en la tabla correspondiente
             String sql = "INSERT INTO palabras (palabra) VALUES (?)";
             PreparedStatement statement = connection.prepareStatement(sql);
-    
+
             // Insertar solo las primeras 10 palabras seleccionadas
             for (String palabra : palabrasSeleccionadas) {
                 statement.setString(1, palabra);
@@ -77,9 +81,7 @@ public class Modelo {
             }
         }
     }
-    
-    
-    
+
     public void insertarPalabras() {
         try {
             // Preparar la consulta SQL para insertar las palabras en la tabla correspondiente
@@ -131,21 +133,17 @@ public class Modelo {
             } else {
                 e.printStackTrace();
             }
-
         }
     }
 
-//vaciar las palabras de la tabla
+    // Vaciar las palabras de la tabla
     public void vaciarPalabras() {
         try {
             // Preparar la consulta SQL para vaciar la tabla correspondiente
             String sql = "DELETE FROM palabras";
             PreparedStatement statement = connection.prepareStatement(sql);
-
             // Ejecutar la consulta SQL para vaciar la tabla
             statement.executeUpdate();
-            
-            
             palabras.clear();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -158,7 +156,6 @@ public class Modelo {
             String sql = "DELETE FROM palabras WHERE palabra = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setString(1, palabra);
-
             // Ejecutar la consulta SQL para eliminar la palabra
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -173,7 +170,6 @@ public class Modelo {
             String sql = "SELECT palabra FROM palabras";
             PreparedStatement statement = connection.prepareStatement(sql);
             ResultSet resultSet = statement.executeQuery();
-
             // Leer todas las palabras y agregarlas a la lista de palabras
             while (resultSet.next()) {
                 palabras.add(resultSet.getString("palabra"));
@@ -187,6 +183,15 @@ public class Modelo {
         return palabras;
     }
 
+    public List<String> obtenerPalabrasParaSopa() {
+        leerPalabras();
+        if (palabras.size() > 10) {
+            return palabras.subList(0, 10); // Devuelve las primeras 10 palabras
+        } else {
+            return new ArrayList<>(palabras); // Devuelve todas las palabras si hay menos de 10
+        }
+    }
+
     public void cerrarConexion() {
         try {
             if (connection != null && !connection.isClosed()) {
@@ -196,9 +201,8 @@ public class Modelo {
             e.printStackTrace();
         }
     }
-
- 
 }
+
 /*
 
     DELIMITER //

@@ -26,20 +26,19 @@ public class Controlador {
         vista.addVaciarListaListener(e -> vaciarTabla());
     }
 
-
-    //metodo vaciar tabla de la base de datos
+    // Método vaciar tabla de la base de datos
     public void vaciarTabla() {
         modelo.vaciarPalabras();
         consultarPalabra();
-        
     }
-   public void iniciarPArtida(){
+
+    
+    public void iniciarPartida() {
         modelo.crearTabla();
         modelo.vaciarPalabras();
         modelo.insertarPalabrasInicio();
         consultarPalabra();
         generarSopa();
-        
     }
 
     private void agregarPalabra() {
@@ -49,7 +48,6 @@ public class Controlador {
         // Validar que la palabra no tenga caracteres especiales ni espacios y tenga un máximo de 15 caracteres
         if (!palabra.matches("[a-zA-ZñÑáéíóúÁÉÍÓÚüÜ]+")) {
             JOptionPane.showMessageDialog(vista, "La palabra solo puede contener letras sin espacios ni caracteres especiales.", "Error", JOptionPane.WARNING_MESSAGE);
-
         } else if (palabra.length() > 15) {
             JOptionPane.showMessageDialog(vista, "La palabra no puede contener más de 15 caracteres. Elimine una si quiere agregar otra", "Error", JOptionPane.ERROR_MESSAGE);
         } else {
@@ -58,8 +56,8 @@ public class Controlador {
             if (modelo.isDuplicateEntryError()) {
                 // Manejar la acción cuando se detecta una entrada duplicada
                 JOptionPane.showMessageDialog(vista, "La palabra ya existe en la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
-            } else if (modelo.esLimite() == true) {
-                JOptionPane.showMessageDialog(vista, "No se pueden agregar mas palabras .", "Error", JOptionPane.ERROR_MESSAGE);
+            } else if (modelo.esLimite()) {
+                JOptionPane.showMessageDialog(vista, "No se pueden agregar más palabras.", "Error", JOptionPane.ERROR_MESSAGE);
             } else {
                 vista.addWordToList(palabraFinal);
                 vista.clearTextField();
@@ -91,11 +89,10 @@ public class Controlador {
 
         // Actualizar el estado del botón de generar sopa
         vista.setGenerateButtonEnabled(habilitar);
-
     }
 
     private void consultarPalabra() {
-        // Leer las palabras desde la base de datos
+        // Leer las palabras desde el modelo
         modelo.leerPalabras();
 
         // Obtener la lista de palabras leídas
@@ -116,28 +113,47 @@ public class Controlador {
         vista.setGenerateButtonEnabled(palabrasIngresadas != null && palabrasIngresadas.length > 0);
     }
 
-    private void generarSopa() {
-        // Obtener las palabras ingresadas desde la vista
-        String[] palabrasIngresadas = vista.getPalabras();
+private void generarSopa() {
+    // Leer las palabras desde el modelo
+    modelo.leerPalabras();
 
-        if (palabrasIngresadas != null && palabrasIngresadas.length > 0) { // Verificar si se ingresaron palabras
-            // Inicializar las matrices M y H
-            M = new String[18][29];
-            H = new int[18][29];
+    //imprimir las palabras
+    List<String> palabras = modelo.obtenerPalabras();
+    System.out.println(Arrays.toString(palabras.toArray()));
 
-            // Generar la sopa de letras con las palabras ingresadas
-            colocarTodas(palabrasIngresadas);
+    // Inicializar las matrices M y H
+    M = new String[10][10]; // Tamaño arbitrario
+    H = new int[10][10];
 
-            // Mostrar la matriz en la vista
-            vista.setTextAreaContent(convertirMatrizAString(M));
-        } else {
-            // Si no hay palabras, generar letras aleatorias
-            inicializaMatrices(); // Llena la matriz con letras aleatorias
+    // Comprueba si la lista de palabras no está vacía
+    if (palabras != null && !palabras.isEmpty()) { 
+        // Convertir la lista de palabras a un array
+        String[] palabrasArray = palabras.toArray(new String[0]);
 
-            // Mostrar la matriz en la vista
-            vista.setTextAreaContent(convertirMatrizAString(M));
-        }
+        // Generar la sopa de letras con las palabras ingresadas
+        Sopa sopa = new Sopa();
+        sopa.colocarTodas(palabrasArray, M, H);
+        
+        
+        sopa.rellenarHuecos(M,H);
+        
+        // Mostrar la matriz en la vista
+        vista.setTextAreaContent(convertirMatrizAString(M));
+    } else {
+        // Si no hay palabras, generar letras aleatorias
+        inicializaMatrices(); // Llena la matriz con letras aleatorias
+
+        // Mostrar la matriz en la vista
+        vista.setTextAreaContent(convertirMatrizAString(M));
     }
+}
+
+
+
+
+
+
+
 
     // Métodos de colocación de palabras, inicialización de matrices y otras utilidades aquí...
     private String convertirMatrizAString(String[][] matriz) {
@@ -151,287 +167,18 @@ public class Controlador {
         return sb.toString();
     }
 
-    // Métodos de colocación de palabras, inicialización de matrices y otras utilidades aquí...
+    // Llena la matriz con letras aleatorias
+    private void inicializaMatrices() {
+        Random random = new Random();
+        for (int i = 0; i < M.length; i++) {
+            for (int j = 0; j < M[i].length; j++) {
+                M[i][j] = String.valueOf((char) ('A' + random.nextInt(26)));
+            }
+        }
+    }
+
     public static int azar(int limite) {
         Random random = new Random();
         return random.nextInt(limite);
     }
-
-    public static void colocarTodas(String[] palabras) {
-        int orientacion;
-        String[] word;
-        int longPalabra = palabras.length;
-        int cuenta = 0;
-        boolean COLOCADO = false;
-
-        // Colocar todas las palabras
-        do {
-            word = palabras[cuenta].split("");
-            orientacion = azar(8);
-            COLOCADO = false;
-            switch (orientacion) {
-                case 0:
-                    COLOCADO = colocarPalabra0(word);
-                    break;
-                case 1:
-                    COLOCADO = colocarPalabra1(word);
-                    break;
-                case 2:
-                    COLOCADO = colocarPalabra2(word);
-                    break;
-                case 3:
-                    COLOCADO = colocarPalabra3(word);
-                    break;
-                case 4:
-                    COLOCADO = colocarPalabra4(word);
-                    break;
-                case 5:
-                    COLOCADO = colocarPalabra5(word);
-                    break;
-                case 6:
-                    COLOCADO = colocarPalabra6(word);
-                    break;
-                case 7:
-                    COLOCADO = colocarPalabra7(word);
-                    break;
-            }
-            if (COLOCADO) {
-                cuenta++;
-            }
-        } while (cuenta < longPalabra);
-
-        // Rellenar los espacios restantes con letras aleatorias
-        for (int i = 0; i < M.length; i++) {
-            for (int j = 0; j < M[i].length; j++) {
-                if (M[i][j] == null) {
-                    M[i][j] = generarLetraAleatoria();
-                }
-            }
-        }
-    }
-
-    public static String generarLetraAleatoria() {
-        String letras = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
-        return letras.charAt(azar(letras.length())) + "";
-    }
-
-    //-------------------------------------------------------------------------
-// Coloca la palabra almacenada en word de izquierda a derecha
-    public static boolean colocarPalabra0(String[] word) {
-        // Seleccionar una fila al azar de 0 a número de M.length-1
-        int f = azar(M.length);
-        // Seleccionar una columna al azar de 0 a número de columnas menos la longitud de word
-        int L = word.length;
-        int c = azar(M[0].length - L + 1);
-        boolean PERMITIDO = true;
-        for (int t = 0; t < L; t++) {
-            // Si el hueco está ocupado por una letra distinta de la que quiero colocar
-            if ((H[f][c + t] == 1) && (!M[f][c + t].equals(word[t]))) {
-                PERMITIDO = false;
-            }
-        }
-        if (PERMITIDO) {
-            // Colocamos la palabra en la matriz M
-            for (int t = 0; t < L; t++) {
-                M[f][c + t] = word[t];
-                H[f][c + t] = 1;
-            }
-        }
-        return PERMITIDO;
-    }
-
-//-------------------------------------------------------------------------
-// Coloca la palabra almacenada en word de arriba abajo
-    public static boolean colocarPalabra1(String[] word) {
-        // Seleccionar una columna al azar de 0 a número de M[0].length-1
-        int c = azar(M[0].length);
-        // Seleccionar una fila al azar de 0 a número de filas menos la longitud de word
-        int L = word.length;
-        int f = azar(M.length - L + 1);
-        boolean PERMITIDO = true;
-        for (int t = 0; t < L; t++) {
-            // Si el hueco está ocupado por una letra distinta de la que quiero colocar
-            if ((H[f + t][c] == 1) && (!M[f + t][c].equals(word[t]))) {
-                PERMITIDO = false;
-            }
-        }
-        if (PERMITIDO) {
-            // Colocamos la palabra en la matriz M
-            for (int t = 0; t < L; t++) {
-                M[f + t][c] = word[t];
-                H[f + t][c] = 1;
-            }
-        }
-        return PERMITIDO;
-    }
-
-// Agrega las demás funciones colocarPalabra con las correcciones...
-//-------------------------------------------------------------------------
-// Coloca la palabra almacenada en word de derecha a izquierda
-    public static boolean colocarPalabra2(String[] word) {
-        // Seleccionar una fila al azar de 0 a número de filas menos la longitud de word
-        int L = word.length;
-        int f = azar(M.length - L + 1);
-        // Seleccionar una columna al azar de 0 a número de M[0].length-1 que es el número de columnas - 1
-        int c = azar(M[0].length);
-        boolean PERMITIDO = true;
-        for (int t = 0; t < L; t++) {
-            // Si el hueco está ocupado por una letra distinta de la que quiero colocar
-            if ((H[f + t][c] == 1) && (!M[f + t][c].equals(word[L - t - 1]))) {
-                PERMITIDO = false;
-            }
-        }
-        if (PERMITIDO) {
-            // Colocamos la palabra en la matriz M
-            for (int t = 0; t < L; t++) {
-                M[f + t][c] = word[L - t - 1];
-                H[f + t][c] = 1;
-            }
-        }
-        return PERMITIDO;
-    }
-
-//-------------------------------------------------------------------------
-// Coloca la palabra almacenada en word de arriba abajo y de derecha a izquierda
-    public static boolean colocarPalabra3(String[] word) {
-        // Seleccionar una columna al azar de 0 a número de M[0].length-1 que es el número de columnas - 1
-        int c = azar(M[0].length);
-        // Seleccionar una fila al azar de 0 a número de filas menos la longitud de word
-        int L = word.length;
-        int f = azar(M.length - L + 1);
-        boolean PERMITIDO = true;
-        for (int t = 0; t < L; t++) {
-            // Si el hueco está ocupado por una letra distinta de la que quiero colocar
-            if ((H[f + t][c] == 1) && (!M[f + t][c].equals(word[t]))) {
-                PERMITIDO = false;
-            }
-        }
-        if (PERMITIDO) {
-            // Colocamos la palabra en la matriz M
-            for (int t = 0; t < L; t++) {
-                M[f + t][c] = word[t];
-                H[f + t][c] = 1;
-            }
-        }
-        return PERMITIDO;
-    }
-
-// Agrega las demás funciones colocarPalabra con las correcciones...
-//-------------------------------------------------------------------------
-// Coloca la palabra almacenada en word de derecha a izquierda
-    public static boolean colocarPalabra4(String[] word) {
-        // Seleccionar una fila al azar de 0 a número de filas menos la longitud de word
-        int L = word.length;
-        int f = azar(M.length - L + 1);
-        // Seleccionar una columna al azar de 0 a número de M[0].length-1 que es el número de columnas - 1
-        int c = azar(M[0].length);
-        boolean PERMITIDO = true;
-        for (int t = 0; t < L; t++) {
-            // Si el hueco está ocupado por una letra distinta de la que quiero colocar
-            if ((H[f + t][c] == 1) && (!M[f + t][c].equals(word[L - t - 1]))) {
-                PERMITIDO = false;
-            }
-        }
-        if (PERMITIDO) {
-            // Colocamos la palabra en la matriz M
-            for (int t = 0; t < L; t++) {
-                M[f + t][c] = word[L - t - 1];
-                H[f + t][c] = 1;
-            }
-        }
-        return PERMITIDO;
-    }
-
-//-------------------------------------------------------------------------
-// Coloca la palabra almacenada en word de arriba abajo y de derecha a izquierda
-    public static boolean colocarPalabra5(String[] word) {
-        // Seleccionar una columna al azar de 0 a número de M[0].length-1 que es el número de columnas - 1
-        int c = azar(M[0].length);
-        // Seleccionar una fila al azar de 0 a número de filas menos la longitud de word
-        int L = word.length;
-        int f = azar(M.length - L + 1);
-        boolean PERMITIDO = true;
-        for (int t = 0; t < L; t++) {
-            // Si el hueco está ocupado por una letra distinta de la que quiero colocar
-            if ((H[f + t][c] == 1) && (!M[f + t][c].equals(word[t]))) {
-                PERMITIDO = false;
-            }
-        }
-        if (PERMITIDO) {
-            // Colocamos la palabra en la matriz M
-            for (int t = 0; t < L; t++) {
-                M[f + t][c] = word[t];
-                H[f + t][c] = 1;
-            }
-        }
-        return PERMITIDO;
-    }
-
-//-------------------------------------------------------------------------
-// Coloca la palabra almacenada en word de derecha a izquierda
-    public static boolean colocarPalabra6(String[] word) {
-        // Seleccionar una fila al azar de 0 a número de filas menos la longitud de word
-        int L = word.length;
-        int f = azar(M.length - L + 1);
-        // Seleccionar una columna al azar de 0 a número de M[0].length-1 que es el número de columnas - 1
-        int c = azar(M[0].length);
-        boolean PERMITIDO = true;
-        for (int t = 0; t < L; t++) {
-            // Si el hueco está ocupado por una letra distinta de la que quiero colocar
-            if ((H[f + t][c] == 1) && (!M[f + t][c].equals(word[L - t - 1]))) {
-                PERMITIDO = false;
-            }
-        }
-        if (PERMITIDO) {
-            // Colocamos la palabra en la matriz M
-            for (int t = 0; t < L; t++) {
-                M[f + t][c] = word[L - t - 1];
-                H[f + t][c] = 1;
-            }
-        }
-        return PERMITIDO;
-    }
-
-//-------------------------------------------------------------------------
-// Coloca la palabra almacenada en word de arriba abajo y de derecha a izquierda
-    public static boolean colocarPalabra7(String[] word) {
-        // Seleccionar una columna al azar de 0 a número de M[0].length-1 que es el número de columnas - 1
-        int c = azar(M[0].length);
-        // Seleccionar una fila al azar de 0 a número de filas menos la longitud de word
-        int L = word.length;
-        int f = azar(M.length - L + 1);
-        boolean PERMITIDO = true;
-        for (int t = 0; t < L; t++) {
-            // Si el hueco está ocupado por una letra distinta de la que quiero colocar
-            if ((H[f + t][c] == 1) && (!M[f + t][c].equals(word[t]))) {
-                PERMITIDO = false;
-            }
-        }
-        if (PERMITIDO) {
-            // Colocamos la palabra en la matriz M
-            for (int t = 0; t < L; t++) {
-                M[f + t][c] = word[t];
-                H[f + t][c] = 1;
-            }
-        }
-        return PERMITIDO;
-    }
-
-    /**
-     *
-     */
-    public static void inicializaMatrices() {
-        String cadena = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
-        String[] letra;
-        letra = cadena.split("");
-        int f, c;
-        for (f = 0; f < M.length; f++) {
-            // Rellena de letras al azar la fila f
-            for (c = 0; c < M[0].length; c++) {
-                M[f][c] = letra[azar(27)];
-                H[f][c] = 1; // Marcar como ocupada
-            }
-        }
-    }
-
 }

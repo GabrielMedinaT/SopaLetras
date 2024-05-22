@@ -1,6 +1,8 @@
 package sopaletras;
+
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -10,10 +12,10 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Highlighter;
 import javax.swing.text.DefaultHighlighter;
-import javax.swing.text.Element;
+import javax.swing.text.StyledDocument;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
-import javax.swing.text.StyledDocument;
+import javax.swing.text.Element;
 
 public class Vista extends JFrame {
 
@@ -22,22 +24,23 @@ public class Vista extends JFrame {
     private final JButton deleteButton;
     private final JButton generarSopa;
     private final JButton consultarBaseDatos;
-    private final JTextPane textArea;
+    private final JTextPane areaSopa;
     private final JButton vaciarLista;
     private final JList<String> wordList; // Cambiado a JList<String>
     private final DefaultListModel<String> listModel;
     private final JButton botonSolucion;
     private Modelo modelo;
     private int lastSelectedIndex = -1;
+    private Sopa sopa;
+    private List<int[]> posicionesVista;
+    
 
     public Vista() {
         // Configuración de la ventana principal
         setTitle("Sopa de Letras");
-        setSize(1280, 800);
+        setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
-        
-        
 
         // Panel izquierdo para la entrada de palabras y botones
         JPanel leftPanel = new JPanel();
@@ -81,7 +84,6 @@ public class Vista extends JFrame {
         gbc.gridwidth = 2;
         leftPanel.add(vaciarLista, gbc);
 
-
         // Lista de palabras (JList)
         listModel = new DefaultListModel<>();
         wordList = new JList<>(listModel);
@@ -103,21 +105,19 @@ public class Vista extends JFrame {
         botonSolucion = new JButton("Solucion");
         rightPanel.add(botonSolucion, BorderLayout.SOUTH);
 
-        textArea = new JTextPane();
-        textArea.setFont(new Font("Monospaced", Font.PLAIN, 28));
-        textArea.setEditable(false);
-        JScrollPane textScrollPane = new JScrollPane(textArea);
-        
+        areaSopa = new JTextPane();
+        areaSopa.setFont(new Font("Monospaced", Font.PLAIN, 28));
+        areaSopa.setEditable(false);
+        JScrollPane textScrollPane = new JScrollPane(areaSopa);
+
         rightPanel.add(textScrollPane, BorderLayout.CENTER);
 
         add(rightPanel, BorderLayout.CENTER);
 
-        
-
         add(rightPanel, BorderLayout.CENTER);
-
-        
-        textArea.addMouseListener(new MouseAdapter() {
+        areaSopa.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        areaSopa.setCaretColor(getBackground());
+        areaSopa.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 JTextPane source = (JTextPane) e.getSource();
@@ -134,9 +134,13 @@ public class Vista extends JFrame {
                     if (Color.RED.equals(currentColor)) {
                         // Revert to default color
                         StyleConstants.setForeground(newStyle, Color.BLACK);
+                        StyleConstants.setBold(newStyle, false);
+                        StyleConstants.setItalic(newStyle, false);
                     } else {
-                        // Change to red color
+                        // Change to red color and make it bold and italic
                         StyleConstants.setForeground(newStyle, Color.RED);
+                        StyleConstants.setBold(newStyle, true);
+                        StyleConstants.setItalic(newStyle, true);
                     }
 
                     // Apply the new style to the letter
@@ -146,31 +150,72 @@ public class Vista extends JFrame {
                 }
             }
         });
-        
-        
-        
-        
-        
 
+
+        botonSolucion.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("Botón Solución clickeado");
+                String[] palabras = getPalabras();
+                StyledDocument doc = areaSopa.getStyledDocument();
         
+                // Eliminar cualquier resaltado previo
+                limpiarResaltado(doc);
         
+                // Obtener el contenido del JTextPane
+                String contenido = areaSopa.getText();
+        
+                // Iterar sobre cada palabra en la lista de palabras
+                for (String palabra : palabras) {
+                    // Buscar y resaltar cada ocurrencia de la palabra en el contenido del JTextPane
+                    resaltarOcurrenciasEnTexto(palabra, contenido, doc);
+                }
+            }
+        });
+
+
+    }
+    private void limpiarResaltado(StyledDocument doc) {
+        doc.setCharacterAttributes(0, doc.getLength(), areaSopa.getStyle("default"), true);
     }
 
+    private void resaltarOcurrenciasEnTexto(String palabra, String contenido, StyledDocument doc) {
+        int index = contenido.indexOf(palabra);
+        while (index != -1) {
+            doc.setCharacterAttributes(index, palabra.length(), areaSopa.getStyle("resaltado"), true);
+            index = contenido.indexOf(palabra, index + palabra.length());
+        }
+    }
     
-    
-    
-public String[] getPalabras() {
-    // Obtiene todas las palabras en la lista
-    ListModel<String> listModel = wordList.getModel();
-    String[] palabras = new String[listModel.getSize()];
+    public String[] getPalabras() {
+        // Obtiene todas las palabras en la lista
+        ListModel<String> listModel = wordList.getModel();
+        String[] palabras = new String[listModel.getSize()];
 
-    // Itera sobre el modelo de lista y agrega cada palabra al array
-    for (int i = 0; i < listModel.getSize(); i++) {
-        palabras[i] = listModel.getElementAt(i);
+        // Itera sobre el modelo de lista y agrega cada palabra al array
+        for (int i = 0; i < listModel.getSize(); i++) {
+            palabras[i] = listModel.getElementAt(i);
+        }
+
+        return palabras;
     }
 
-    return palabras;
+    private String[][] obtenerSopaLetrasDesdeArea() {
+    String content = areaSopa.getText();
+    String[] filas = content.split("\n");
+    int numRows = filas.length;
+    int numCols = filas[0].length();
+    String[][] sopaLetras = new String[numRows][numCols];
+    for (int i = 0; i < numRows; i++) {
+        for (int j = 0; j < numCols; j++) {
+            sopaLetras[i][j] = String.valueOf(filas[i].charAt(j));
+        }
+    }
+    return sopaLetras;
 }
+
+    
     public void setWordList(List<String> palabras) {
         listModel.clear();
         for (String palabra : palabras) {
@@ -178,11 +223,10 @@ public String[] getPalabras() {
         }
     }
 
-    
-    public void setGenerateButtonEnabled(boolean generar){
+    public void setGenerateButtonEnabled(boolean generar) {
         generarSopa.setEnabled(generar);
-        
-        }
+
+    }
 
     public String getTextFieldValue() {
         return textField.getText();
@@ -193,7 +237,7 @@ public String[] getPalabras() {
     }
 
     public void setTextAreaContent(String content) {
-        textArea.setText(content);
+        areaSopa.setText(content);
     }
 
     public void addWordToList(String word) {
@@ -237,8 +281,6 @@ public String[] getPalabras() {
         addWindowListener(windowAdapter);
     }
     //al cerrar se vacia la basededatos
-    
-    // onclick de vaciarlista 
 
-    
+    // onclick de vaciarlista 
 }

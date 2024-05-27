@@ -3,9 +3,6 @@ package sopaletras;
 import java.awt.Color;
 import java.util.List;
 import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
 public class Controlador {
@@ -17,9 +14,8 @@ public class Controlador {
     public Controlador(Modelo modelo, Vista vista) {
         this.modelo = modelo;
         this.vista = vista;
-        this.sopa = new Sopa(15, 20); // Inicializar la sopa con el tamaño adecuado
+        this.sopa = new Sopa(15, 20); 
 
-        // Configurar los listeners de los botones en la vista
         vista.addAddButtonListener(e -> agregarPalabra());
         vista.addDeleteButtonListener(e -> eliminarPalabra());
         vista.addConsultButtonListener(e -> consultarPalabra());
@@ -39,6 +35,7 @@ public class Controlador {
         modelo.crearTrigger();
         modelo.vaciarPalabras();
         modelo.insertarPalabrasInicio();
+        generarSopa();
         consultarPalabra();
         vista.setGenerateButtonEnabled(true);
     }
@@ -125,8 +122,6 @@ public class Controlador {
         vista.limpiarResaltado(doc);
 
         String[][] matrizCombinada = sopa.combinarMatrices();
-        for (String palabra : palabras) {
-            vista.resaltarOcurrenciasEnMatriz(matrizCombinada, palabra, doc);
-        }
+        vista.resaltarPalabras(palabras, matrizCombinada);
     }
 }

@@ -7,11 +7,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.util.List;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.StyledDocument;
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.Element;
+import javax.swing.text.*;
 
 public class Vista extends JFrame {
 
@@ -89,7 +85,6 @@ public class Vista extends JFrame {
         // Panel derecho para la sopa de letras y botón de generación
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BorderLayout());
-       
 
         generarSopa = new JButton("Generar Sopa Letras");
         rightPanel.add(generarSopa, BorderLayout.NORTH);
@@ -149,14 +144,6 @@ public class Vista extends JFrame {
         StyleConstants.setBold(defaultStyle, false);
         StyleConstants.setItalic(defaultStyle, false);
         doc.setCharacterAttributes(0, doc.getLength(), defaultStyle, true);
-    }
-
-    public JButton getSolucionButton() {
-        return botonSolucion;
-    }
-
-    public void displaySolution(String solution) {
-        JOptionPane.showMessageDialog(this, solution, "Solución", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void resaltarOcurrenciasEnMatriz(String palabra, StyledDocument doc, String[][] matriz) {
@@ -372,7 +359,6 @@ public class Vista extends JFrame {
         areaSopa.setText(content);
         System.out.println("Contenido establecido en JTextPane: " + content);
     }
-    
     
     public void addWordToList(String word) {
         listModel.addElement(word);

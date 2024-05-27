@@ -32,8 +32,8 @@ public class Modelo {
             // Establecer la conexión con la base de datos
             String url = "jdbc:mariadb://localhost:3306/sopaletras";
             String usuario = "root";
-            String contraseña = "root1234";
-            connection = (Connection) DriverManager.getConnection(url, usuario, contraseña);
+            String password = "root1234";
+            connection = (Connection) DriverManager.getConnection(url, usuario, password);
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
         }

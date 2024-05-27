@@ -10,9 +10,6 @@ public class Main {
         modelo.crearTrigger();
 
         controlador.iniciarPartida();
-        // Hacer visible la vista
         vista.setVisible(true);
-
-       // controlador.pruebaResaltadoSimplificado();
     }
 }

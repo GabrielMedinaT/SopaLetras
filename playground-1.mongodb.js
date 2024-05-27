@@ -63,11 +63,7 @@ db.createCollection("estaciones", {
             bsonType: "int",
             description: "debe ser un int y es obligatorio",
             },
-            num_linea: {
-            bsonType: "int",
-            description: "debe ser un entero y es obligatorio",
-            
-            },
+
         },
         },
     },
@@ -84,6 +80,33 @@ db.createCollection("jornadas", {
           description: "debe ser un date y es obligatorio",
         },
         turno: {
+          bsonType: "string",
+          description: "debe ser un string y es obligatorio",
+        },
+      },
+    },
+  },
+});
+// crear coleccion supervisor
+db.createCollection("supervisores", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["dni", "nombre", "direccion", "telefono"],
+      properties: {
+        dni: {
+          bsonType: "string",
+          description: "debe ser un string y es obligatorio",
+        },
+        nombre: {
+          bsonType: "string",
+          description: "debe ser un string y es obligatorio",
+        },
+        direccion: {
+          bsonType: "string",
+          description: "debe ser un string y es obligatorio",
+        },
+        telefono: {
           bsonType: "string",
           description: "debe ser un string y es obligatorio",
         },
@@ -207,8 +230,8 @@ db.createCollection("asignan", {
       required: ["num_linea", "matricula"],
       properties: {
         num_linea: {
-          bsonType: "objectId",
-          description: "debe ser un objectId y es obligatorio",
+          bsonType: "int",
+          description: "debe ser un numero de linea y es obligatorio",
         },
         matricula: {
           bsonType: "string",

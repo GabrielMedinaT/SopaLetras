@@ -38,6 +38,8 @@ public class Modelo {
             e.printStackTrace();
         }
     }
+    
+    
 
     public void crearTabla() {
         try {
@@ -50,13 +52,35 @@ public class Modelo {
             e.printStackTrace();
         }
     }
+    
+ public void crearTrigger() {
+        String dropTriggerSql = "DROP TRIGGER IF EXISTS limitar_numero_palabras";
+        String createTriggerSql = 
+            "CREATE TRIGGER limitar_numero_palabras " +
+            "BEFORE INSERT ON palabras " +
+            "FOR EACH ROW " +
+            "BEGIN " +
+            "DECLARE total_palabras INT; " +
+            "SELECT COUNT(*) INTO total_palabras FROM palabras; " +
+            "IF total_palabras >= 15 THEN " +
+            "SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No se permiten más de 15 palabras en la tabla'; " +
+            "END IF; " +
+            "END";
+
+        try (Statement stmt = connection.createStatement()) {
+            // Eliminar el trigger existente si existe
+            stmt.execute(dropTriggerSql);
+            // Crear el nuevo trigger
+            stmt.execute(createTriggerSql);
+        } catch (SQLException e) {
+            System.err.println("Error al crear el trigger: " + e.getMessage());
+        }
+    }
 
     public void insertarPalabrasInicio() {
         List<String> listaPalabras = Arrays.asList(palabrasJuego);
         Collections.shuffle(listaPalabras);
-        List<String> palabrasSeleccionadas = listaPalabras.subList(0, 10);
-
-        System.out.println("Palabras seleccionadas: " + palabrasSeleccionadas); // Imprimir las palabras seleccionadas
+        List<String> palabrasSeleccionadas = listaPalabras.subList(0, 6);
 
         try {
             // Preparar la consulta SQL para insertar las palabras en la tabla correspondiente
@@ -202,21 +226,3 @@ public class Modelo {
         }
     }
 }
-
-/*
-
-    DELIMITER //
-    CREATE TRIGGER before_insert_mi_tabla
-    BEFORE INSERT ON palabras
-    FOR EACH ROW
-    BEGIN
-        DECLARE row_count INT;
-        SELECT COUNT(*) INTO row_count FROM palabras;
-        IF row_count >= 15 THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Se ha alcanzado el límite máximo de elementos en la tabla';
-        END IF;
-    END;
-    //
-    DELIMITER ;
-
-*/

@@ -1,29 +1,31 @@
 package sopaletras;
 
-import java.util.Arrays;
+import java.awt.Color;
 import java.util.List;
-import java.util.Random;
 import javax.swing.JOptionPane;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 public class Controlador {
 
     private Modelo modelo;
+    private Sopa sopa;
     private Vista vista;
-    static String[][] M; // Variable global
-    static int[][] H; // Variable global array de huecos
 
     public Controlador(Modelo modelo, Vista vista) {
         this.modelo = modelo;
         this.vista = vista;
-        boolean generar = false;
+        this.sopa = new Sopa(15, 20); // Inicializar la sopa con el tamaño adecuado
 
         // Configurar los listeners de los botones en la vista
         vista.addAddButtonListener(e -> agregarPalabra());
         vista.addDeleteButtonListener(e -> eliminarPalabra());
         vista.addConsultButtonListener(e -> consultarPalabra());
         vista.addGenerateButtonListener(e -> generarSopa());
-        vista.setGenerateButtonEnabled(generar);
+        vista.setGenerateButtonEnabled(false);
         vista.addVaciarListaListener(e -> vaciarTabla());
+        vista.addSolucionButtonListener(e -> mostrarSolucion());
     }
 
     // Método vaciar tabla de la base de datos
@@ -32,7 +34,6 @@ public class Controlador {
         consultarPalabra();
     }
 
-    
     public void iniciarPartida() {
         modelo.crearTabla();
         modelo.vaciarPalabras();
@@ -113,49 +114,23 @@ public class Controlador {
         vista.setGenerateButtonEnabled(palabrasIngresadas != null && palabrasIngresadas.length > 0);
     }
 
-private void generarSopa() {
-    // Leer las palabras desde el modelo
-    modelo.leerPalabras();
+    private void generarSopa() {
+        // Leer las palabras desde el modelo
+        modelo.leerPalabras();
 
-    //imprimir las palabras
-    List<String> palabras = modelo.obtenerPalabras();
-    System.out.println(Arrays.toString(palabras.toArray()));
+        // Obtener la lista de palabras
+        List<String> palabras = modelo.obtenerPalabras();
 
-    // Inicializar las matrices M y H
-    M = new String[10][10]; // Tamaño arbitrario
-    H = new int[10][10];
+        // Inicializar la matriz con letras aleatorias
+        sopa.inicializaMatrices();
 
-    // Comprueba si la lista de palabras no está vacía
-    if (palabras != null && !palabras.isEmpty()) { 
-        // Convertir la lista de palabras a un array
-        String[] palabrasArray = palabras.toArray(new String[0]);
-
-        // Generar la sopa de letras con las palabras ingresadas
-        Sopa sopa = new Sopa();
-        sopa.colocarTodas(palabrasArray, M, H);
-        
-        
-        sopa.rellenarHuecos(M,H);
-        
-        // Mostrar la matriz en la vista
-        vista.setTextAreaContent(convertirMatrizAString(M));
-    } else {
-        // Si no hay palabras, generar letras aleatorias
-        inicializaMatrices(); // Llena la matriz con letras aleatorias
+        // Colocar las palabras en la sopa de letras
+        sopa.colocarTodas(palabras);
 
         // Mostrar la matriz en la vista
-        vista.setTextAreaContent(convertirMatrizAString(M));
+        vista.setTextAreaContent(convertirMatrizAString(sopa.getMatrizLetras()));
     }
-}
 
-
-
-
-
-
-
-
-    // Métodos de colocación de palabras, inicialización de matrices y otras utilidades aquí...
     private String convertirMatrizAString(String[][] matriz) {
         StringBuilder sb = new StringBuilder();
         for (String[] fila : matriz) {
@@ -167,18 +142,41 @@ private void generarSopa() {
         return sb.toString();
     }
 
-    // Llena la matriz con letras aleatorias
-    private void inicializaMatrices() {
-        Random random = new Random();
-        for (int i = 0; i < M.length; i++) {
-            for (int j = 0; j < M[i].length; j++) {
-                M[i][j] = String.valueOf((char) ('A' + random.nextInt(26)));
-            }
+    private void mostrarSolucion() {
+        List<String> palabras = modelo.obtenerPalabras();
+        StyledDocument doc = vista.areaSopa.getStyledDocument();
+
+        // Eliminar cualquier resaltado previo
+        limpiarResaltado(doc);
+
+        // Obtener el contenido del JTextPane
+        String contenido = vista.areaSopa.getText();
+
+        // Iterar sobre cada palabra en la lista de palabras
+        for (String palabra : palabras) {
+            // Buscar y resaltar cada ocurrencia de la palabra en el contenido del JTextPane
+            resaltarOcurrenciasEnTexto(palabra, contenido, doc);
         }
     }
 
-    public static int azar(int limite) {
-        Random random = new Random();
-        return random.nextInt(limite);
+    private void limpiarResaltado(StyledDocument doc) {
+        SimpleAttributeSet defaultStyle = new SimpleAttributeSet();
+        StyleConstants.setForeground(defaultStyle, Color.BLACK);
+        StyleConstants.setBold(defaultStyle, false);
+        StyleConstants.setItalic(defaultStyle, false);
+        doc.setCharacterAttributes(0, doc.getLength(), defaultStyle, true);
+    }
+
+    private void resaltarOcurrenciasEnTexto(String palabra, String contenido, StyledDocument doc) {
+        SimpleAttributeSet resaltado = new SimpleAttributeSet();
+        StyleConstants.setForeground(resaltado, Color.RED);
+        StyleConstants.setBold(resaltado, true);
+        StyleConstants.setItalic(resaltado, true);
+
+        int index = contenido.indexOf(palabra);
+        while (index != -1) {
+            doc.setCharacterAttributes(index, palabra.length(), resaltado, true);
+            index = contenido.indexOf(palabra, index + palabra.length());
+        }
     }
 }

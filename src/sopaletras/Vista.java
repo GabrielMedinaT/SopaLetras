@@ -8,9 +8,9 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.util.List;
 import javax.swing.text.AttributeSet;
-import javax.swing.text.StyledDocument;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import javax.swing.text.Element;
 
 public class Vista extends JFrame {
@@ -25,11 +25,11 @@ public class Vista extends JFrame {
     private final JList<String> wordList; // Cambiado a JList<String>
     private final DefaultListModel<String> listModel;
     private final JButton botonSolucion;
-    
+
     public Vista() {
         // Configuración de la ventana principal
         setTitle("Sopa de Letras");
-        setSize(1280 , 720);
+        setSize(1280, 720);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -142,8 +142,12 @@ public class Vista extends JFrame {
         });
     }
 
-    private void limpiarResaltado(StyledDocument doc) {
-        doc.setCharacterAttributes(0, doc.getLength(), areaSopa.getStyle("default"), true);
+    public void limpiarResaltado(StyledDocument doc) {
+        SimpleAttributeSet defaultStyle = new SimpleAttributeSet();
+        StyleConstants.setForeground(defaultStyle, Color.BLACK);
+        StyleConstants.setBold(defaultStyle, false);
+        StyleConstants.setItalic(defaultStyle, false);
+        doc.setCharacterAttributes(0, doc.getLength(), defaultStyle, true);
     }
 
     public JButton getSolucionButton() {
@@ -154,11 +158,187 @@ public class Vista extends JFrame {
         JOptionPane.showMessageDialog(this, solution, "Solución", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void resaltarOcurrenciasEnTexto(String palabra, String contenido, StyledDocument doc) {
-        int index = contenido.indexOf(palabra);
-        while (index != -1) {
-            doc.setCharacterAttributes(index, palabra.length(), areaSopa.getStyle("resaltado"), true);
-            index = contenido.indexOf(palabra, index + palabra.length());
+    public void resaltarOcurrenciasEnMatriz(String[][] matriz, String palabra, StyledDocument doc) {
+        SimpleAttributeSet resaltado = new SimpleAttributeSet();
+        StyleConstants.setForeground(resaltado, Color.RED);
+        StyleConstants.setBold(resaltado, true);
+        StyleConstants.setItalic(resaltado, true);
+
+        int filas = matriz.length;
+        int columnas = matriz[0].length;
+        int palabraLongitud = palabra.length();
+
+        try {
+            // Buscar horizontalmente (izquierda a derecha)
+            for (int i = 0; i < filas; i++) {
+                for (int j = 0; j <= columnas - palabraLongitud; j++) {
+                    if (matriz[i][j].equals(String.valueOf(palabra.charAt(0)))) {
+                        boolean encontrado = true;
+                        for (int k = 0; k < palabraLongitud; k++) {
+                            if (!matriz[i][j + k].equals(String.valueOf(palabra.charAt(k)))) {
+                                encontrado = false;
+                                break;
+                            }
+                        }
+                        if (encontrado) {
+                            int start = (i * columnas + j) * 2;
+                            for (int k = 0; k < palabraLongitud; k++) {
+                                doc.setCharacterAttributes(start + k * 2, 1, resaltado, false);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Buscar horizontalmente (derecha a izquierda)
+            for (int i = 0; i < filas; i++) {
+                for (int j = palabraLongitud - 1; j < columnas; j++) {
+                    if (matriz[i][j].equals(String.valueOf(palabra.charAt(0)))) {
+                        boolean encontrado = true;
+                        for (int k = 0; k < palabraLongitud; k++) {
+                            if (!matriz[i][j - k].equals(String.valueOf(palabra.charAt(k)))) {
+                                encontrado = false;
+                                break;
+                            }
+                        }
+                        if (encontrado) {
+                            int start = (i * columnas + j - palabraLongitud + 1) * 2;
+                            for (int k = 0; k < palabraLongitud; k++) {
+                                doc.setCharacterAttributes(start + k * 2, 1, resaltado, false);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Buscar verticalmente (arriba a abajo)
+            for (int i = 0; i <= filas - palabraLongitud; i++) {
+                for (int j = 0; j < columnas; j++) {
+                    if (matriz[i][j].equals(String.valueOf(palabra.charAt(0)))) {
+                        boolean encontrado = true;
+                        for (int k = 0; k < palabraLongitud; k++) {
+                            if (!matriz[i + k][j].equals(String.valueOf(palabra.charAt(k)))) {
+                                encontrado = false;
+                                break;
+                            }
+                        }
+                        if (encontrado) {
+                            int start = (i * columnas + j) * 2;
+                            for (int k = 0; k < palabraLongitud; k++) {
+                                doc.setCharacterAttributes(start + k * columnas * 2, 1, resaltado, false);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Buscar verticalmente (abajo a arriba)
+            for (int i = palabraLongitud - 1; i < filas; i++) {
+                for (int j = 0; j < columnas; j++) {
+                    if (matriz[i][j].equals(String.valueOf(palabra.charAt(0)))) {
+                        boolean encontrado = true;
+                        for (int k = 0; k < palabraLongitud; k++) {
+                            if (!matriz[i - k][j].equals(String.valueOf(palabra.charAt(k)))) {
+                                encontrado = false;
+                                break;
+                            }
+                        }
+                        if (encontrado) {
+                            int start = ((i - palabraLongitud + 1) * columnas + j) * 2;
+                            for (int k = 0; k < palabraLongitud; k++) {
+                                doc.setCharacterAttributes(start + k * columnas * 2, 1, resaltado, false);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Buscar diagonalmente (noroeste a sureste)
+            for (int i = 0; i <= filas - palabraLongitud; i++) {
+                for (int j = 0; j <= columnas - palabraLongitud; j++) {
+                    if (matriz[i][j].equals(String.valueOf(palabra.charAt(0)))) {
+                        boolean encontrado = true;
+                        for (int k = 0; k < palabraLongitud; k++) {
+                            if (!matriz[i + k][j + k].equals(String.valueOf(palabra.charAt(k)))) {
+                                encontrado = false;
+                                break;
+                            }
+                        }
+                        if (encontrado) {
+                            int start = (i * columnas + j) * 2;
+                            for (int k = 0; k < palabraLongitud; k++) {
+                                doc.setCharacterAttributes(start + k * (columnas + 1) * 2, 1, resaltado, false);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Buscar diagonalmente (sureste a noroeste)
+            for (int i = palabraLongitud - 1; i < filas; i++) {
+                for (int j = palabraLongitud - 1; j < columnas; j++) {
+                    if (matriz[i][j].equals(String.valueOf(palabra.charAt(0)))) {
+                        boolean encontrado = true;
+                        for (int k = 0; k < palabraLongitud; k++) {
+                            if (!matriz[i - k][j - k].equals(String.valueOf(palabra.charAt(k)))) {
+                                encontrado = false;
+                                break;
+                            }
+                        }
+                        if (encontrado) {
+                            int start = ((i - palabraLongitud + 1) * columnas + (j - palabraLongitud + 1)) * 2;
+                            for (int k = 0; k < palabraLongitud; k++) {
+                                doc.setCharacterAttributes(start + k * (columnas + 1) * 2, 1, resaltado, false);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Buscar diagonalmente (noreste a suroeste)
+            for (int i = 0; i <= filas - palabraLongitud; i++) {
+                for (int j = palabraLongitud - 1; j < columnas; j++) {
+                    if (matriz[i][j].equals(String.valueOf(palabra.charAt(0)))) {
+                        boolean encontrado = true;
+                        for (int k = 0; k < palabraLongitud; k++) {
+                            if (!matriz[i + k][j - k].equals(String.valueOf(palabra.charAt(k)))) {
+                                encontrado = false;
+                                break;
+                            }
+                        }
+                        if (encontrado) {
+                            int start = (i * columnas + (j - palabraLongitud + 1)) * 2;
+                            for (int k = 0; k < palabraLongitud; k++) {
+                                doc.setCharacterAttributes(start + k * (columnas - 1) * 2, 1, resaltado, false);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Buscar diagonalmente (suroeste a noreste)
+            for (int i = palabraLongitud - 1; i < filas; i++) {
+                for (int j = 0; j <= columnas - palabraLongitud; j++) {
+                    if (matriz[i][j].equals(String.valueOf(palabra.charAt(0)))) {
+                        boolean encontrado = true;
+                        for (int k = 0; k < palabraLongitud; k++) {
+                            if (!matriz[i - k][j + k].equals(String.valueOf(palabra.charAt(k)))) {
+                                encontrado = false;
+                                break;
+                            }
+                        }
+                        if (encontrado) {
+                            int start = ((i - palabraLongitud + 1) * columnas + j) * 2;
+                            for (int k = 0; k < palabraLongitud; k++) {
+                                doc.setCharacterAttributes(start + k * (columnas - 1) * 2, 1, resaltado, false);
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -171,20 +351,6 @@ public class Vista extends JFrame {
         }
 
         return palabras;
-    }
-
-    private String[][] obtenerSopaLetrasDesdeArea() {
-        String content = areaSopa.getText();
-        String[] filas = content.split("\n");
-        int numRows = filas.length;
-        int numCols = filas[0].length();
-        String[][] sopaLetras = new String[numRows][numCols];
-        for (int i = 0; i < numRows; i++) {
-            for (int j = 0; j < numCols; j++) {
-                sopaLetras[i][j] = String.valueOf(filas[i].charAt(j));
-            }
-        }
-        return sopaLetras;
     }
 
     public void setWordList(List<String> palabras) {
@@ -208,8 +374,10 @@ public class Vista extends JFrame {
 
     public void setTextAreaContent(String content) {
         areaSopa.setText(content);
+        System.out.println("Contenido establecido en JTextPane: " + content);
     }
-
+    
+    
     public void addWordToList(String word) {
         listModel.addElement(word);
     }

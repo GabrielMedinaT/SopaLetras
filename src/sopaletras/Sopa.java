@@ -1,14 +1,16 @@
 package sopaletras;
+
 import java.util.List;
+import java.util.Random;
 
 public class Sopa {
 
     private String[][] M; // Matriz de letras
-    private int[][] H;    // Matriz de huecos
+    private String[][] H; // Matriz de palabras
 
     public Sopa(int filas, int columnas) {
         M = new String[filas][columnas];
-        H = new int[filas][columnas];
+        H = new String[filas][columnas];
         inicializaMatrices();
     }
 
@@ -39,20 +41,19 @@ public class Sopa {
 
         boolean PERMITIDO = true;
         for (int t = 0; t < L; t++) {
-            if ((H[f][c + t] == 1) && (M[f][c + t] != word[t])) {
+            if ((H[f][c + t] != null) && (!H[f][c + t].equals(word[t]))) {
                 PERMITIDO = false;
             }
         }
         if (PERMITIDO) {
             for (int t = 0; t < L; t++) {
-                M[f][c + t] = word[t];
-                H[f][c + t] = 1;
+                H[f][c + t] = word[t];
             }
         }
         return PERMITIDO;
     }
 
-    // Coloca la palabra almacenada en word top-down
+    // Coloca la palabra almacenada en word de arriba hacia abajo
     public boolean colocarPalabra2(String[] word) {
         int L = word.length;
         int f = azar(M.length - L + 1);
@@ -60,14 +61,13 @@ public class Sopa {
 
         boolean PERMITIDO = true;
         for (int t = 0; t < L; t++) {
-            if ((H[f + t][c] == 1) && (M[f + t][c] != word[t])) {
+            if ((H[f + t][c] != null) && (!H[f + t][c].equals(word[t]))) {
                 PERMITIDO = false;
             }
         }
         if (PERMITIDO) {
             for (int t = 0; t < L; t++) {
-                M[f + t][c] = word[t];
-                H[f + t][c] = 1;
+                H[f + t][c] = word[t];
             }
         }
         return PERMITIDO;
@@ -81,20 +81,19 @@ public class Sopa {
 
         boolean PERMITIDO = true;
         for (int t = 0; t < L; t++) {
-            if ((H[f][c + t] == 1) && (M[f][c + t] != word[L - t - 1])) {
+            if ((H[f][c + t] != null) && (!H[f][c + t].equals(word[L - t - 1]))) {
                 PERMITIDO = false;
             }
         }
         if (PERMITIDO) {
             for (int t = 0; t < L; t++) {
-                M[f][c + t] = word[L - t - 1];
-                H[f][c + t] = 1;
+                H[f][c + t] = word[L - t - 1];
             }
         }
         return PERMITIDO;
     }
 
-    // Coloca la palabra almacenada en word down-top
+    // Coloca la palabra almacenada en word de abajo hacia arriba
     public boolean colocarPalabra6(String[] word) {
         int L = word.length;
         int f = azar(M.length - L + 1);
@@ -102,20 +101,19 @@ public class Sopa {
 
         boolean PERMITIDO = true;
         for (int t = 0; t < L; t++) {
-            if ((H[f + t][c] == 1) && (!M[f + t][c].equals(word[L - t - 1]))) {
+            if ((H[f + t][c] != null) && (!H[f + t][c].equals(word[L - t - 1]))) {
                 PERMITIDO = false;
             }
         }
         if (PERMITIDO) {
             for (int t = 0; t < L; t++) {
-                M[f + t][c] = word[L - t - 1];
-                H[f + t][c] = 1;
+                H[f + t][c] = word[L - t - 1];
             }
         }
         return PERMITIDO;
     }
 
-    // Coloca la palabra almacenada en word SE
+    // Coloca la palabra almacenada en word diagonal SE
     public boolean colocarPalabra1(String[] word) {
         int L = word.length;
         int f = azar(M.length);
@@ -126,21 +124,20 @@ public class Sopa {
             if ((f + t >= M.length) || (c + t >= M[0].length)) {
                 PERMITIDO = false;
             } else {
-                if ((H[f + t][c + t] == 1) && (!M[f + t][c + t].equals(word[t]))) {
+                if ((H[f + t][c + t] != null) && (!H[f + t][c + t].equals(word[t]))) {
                     PERMITIDO = false;
                 }
             }
         }
         if (PERMITIDO) {
             for (int t = 0; t < L; t++) {
-                M[f + t][c + t] = word[t];
-                H[f + t][c + t] = 1;
+                H[f + t][c + t] = word[t];
             }
         }
         return PERMITIDO;
     }
 
-    // Coloca la palabra almacenada en word SE
+    // Coloca la palabra almacenada en word diagonal NO
     public boolean colocarPalabra5(String[] word) {
         int L = word.length;
         int f = azar(M.length);
@@ -151,21 +148,20 @@ public class Sopa {
             if ((f + t >= M.length) || (c + t >= M[0].length)) {
                 PERMITIDO = false;
             } else {
-                if ((H[f + t][c + t] == 1) && (!M[f + t][c + t].equals(word[L - t - 1]))) {
+                if ((H[f + t][c + t] != null) && (!H[f + t][c + t].equals(word[L - t - 1]))) {
                     PERMITIDO = false;
                 }
             }
         }
         if (PERMITIDO) {
             for (int t = 0; t < L; t++) {
-                M[f + t][c + t] = word[L - t - 1];
-                H[f + t][c + t] = 1;
+                H[f + t][c + t] = word[L - t - 1];
             }
         }
         return PERMITIDO;
     }
 
-    // Coloca la palabra almacenada en word SE
+    // Coloca la palabra almacenada en word diagonal SO
     public boolean colocarPalabra3(String[] word) {
         int L = word.length;
         int f = azar(M.length);
@@ -176,21 +172,20 @@ public class Sopa {
             if ((f + t >= M.length) || (c - t < 0)) {
                 PERMITIDO = false;
             } else {
-                if ((H[f + t][c - t] == 1) && (!M[f + t][c - t].equals(word[t]))) {
+                if ((H[f + t][c - t] != null) && (!H[f + t][c - t].equals(word[t]))) {
                     PERMITIDO = false;
                 }
             }
         }
         if (PERMITIDO) {
             for (int t = 0; t < L; t++) {
-                M[f + t][c - t] = word[t];
-                H[f + t][c - t] = 1;
+                H[f + t][c - t] = word[t];
             }
         }
         return PERMITIDO;
     }
 
-    // Coloca la palabra almacenada en word SE
+    // Coloca la palabra almacenada en word diagonal NE
     public boolean colocarPalabra7(String[] word) {
         int L = word.length;
         int f = azar(M.length);
@@ -201,17 +196,14 @@ public class Sopa {
             if ((f + t >= M.length) || (c - t < 0)) {
                 PERMITIDO = false;
             } else {
-                if ((H[f + t][c - t] == 1) && (!M[f + t][c - t].equals(word[L - t - 1]))) {
+                if ((H[f + t][c - t] != null) && (!H[f + t][c - t].equals(word[L - t - 1]))) {
                     PERMITIDO = false;
                 }
             }
         }
         if (PERMITIDO) {
             for (int t = 0; t < L; t++) {
-                M[f + t][c - t] = word[L - t - 1];
-                H[f + t][c - t] = 1;
-
-                System.out.println("f: " + f + " c: " + c + " t: " + t + " L: " + L);
+                H[f + t][c - t] = word[L - t - 1];
             }
         }
         return PERMITIDO;
@@ -268,12 +260,30 @@ public class Sopa {
         for (f = 0; f < M.length; f++) {
             for (c = 0; c < M[0].length; c++) {
                 M[f][c] = letra[azar(27)];
-                H[f][c] = 0;
+                H[f][c] = null;
             }
         }
     }
 
     public String[][] getMatrizLetras() {
         return M;
+    }
+
+    public String[][] getMatrizPalabras() {
+        return H;
+    }
+
+    public String[][] combinarMatrices() {
+        String[][] matrizCombinada = new String[M.length][M[0].length];
+        for (int i = 0; i < M.length; i++) {
+            for (int j = 0; j < M[0].length; j++) {
+                if (H[i][j] != null) {
+                    matrizCombinada[i][j] = H[i][j];
+                } else {
+                    matrizCombinada[i][j] = M[i][j];
+                }
+            }
+        }
+        return matrizCombinada;
     }
 }

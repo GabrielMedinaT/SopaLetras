@@ -47,14 +47,14 @@ public class Controlador {
         if (!palabra.matches("[a-zA-ZñÑáéíóúÁÉÍÓÚüÜ]+")) {
             JOptionPane.showMessageDialog(vista, "La palabra solo puede contener letras sin espacios ni caracteres especiales.", "Error", JOptionPane.WARNING_MESSAGE);
         } else if (palabra.length() > 15) {
-            JOptionPane.showMessageDialog(vista, "La palabra no puede contener más de 15 caracteres. Elimine una si quiere agregar otra", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(vista, "La palabra no puede contener más de 10 caracteres. ", "Error", JOptionPane.ERROR_MESSAGE);
         } else {
             modelo.agregarPalabra(palabra);
 
             if (modelo.isDuplicateEntryError()) {
                 JOptionPane.showMessageDialog(vista, "La palabra ya existe en la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
             } else if (modelo.esLimite()) {
-                JOptionPane.showMessageDialog(vista, "No se pueden agregar más palabras.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(vista, "No se pueden agregar más palabras. Elimine una si quiere colocar otra ", "Error", JOptionPane.ERROR_MESSAGE);
             } else {
                 vista.addWordToList(palabraFinal);
                 vista.clearTextField();
@@ -100,6 +100,7 @@ public class Controlador {
         String[][] matrizCombinada = sopa.combinarMatrices();
         String contenidoMatriz = convertirMatrizAString(matrizCombinada);
         vista.setTextAreaContent(contenidoMatriz);
+        consultarPalabra();
     }
 
     private String convertirMatrizAString(String[][] matriz) {

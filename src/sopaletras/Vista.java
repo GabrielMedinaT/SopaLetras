@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.text.*;
 
@@ -21,13 +22,64 @@ public class Vista extends JFrame {
     private final JList<String> wordList; // Cambiado a JList<String>
     private final DefaultListModel<String> listModel;
     private final JButton botonSolucion;
+    private final JLabel timerLabel;
+    private Timer timer;
+    private int secondsElapsed;
+    private int elapsedTimeInSeconds;
+
+    private final List<Character> selectedLetters; // Lista para guardar las letras seleccionadas
+    private final DocumentFilter filter = new DocumentFilter() {
+        private static final int MAX_LENGTH = 10;
+        private static final String VALID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+        @Override
+        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+            if (string == null) {
+                return;
+            }
+            if (isValid(string) && fb.getDocument().getLength() + string.length() <= MAX_LENGTH) {
+                super.insertString(fb, offset, string, attr);
+            }
+        }
+
+        @Override
+        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+            if (text == null) {
+                return;
+            }
+            int newLength = fb.getDocument().getLength() - length + text.length();
+            if (isValid(text) && newLength <= MAX_LENGTH) {
+                super.replace(fb, offset, length, text, attrs);
+            }
+        }
+
+        @Override
+        public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+            super.remove(fb, offset, length);
+        }
+
+        private boolean isValid(String text) {
+            for (char c : text.toCharArray()) {
+                if (VALID_CHARACTERS.indexOf(c) == -1) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    };
 
     public Vista() {
+        selectedLetters = new ArrayList<>(); // Inicializar la lista
         // Configuración de la ventana principal
         setTitle("Sopa de Letras");
         setSize(1280, 720);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+
+        JPanel topPanel = new JPanel();
+        timerLabel = new JLabel("Tiempo: 0s");
+        topPanel.add(timerLabel);
+        add(topPanel, BorderLayout.NORTH);
 
         // Panel izquierdo para la entrada de palabras y botones
         JPanel leftPanel = new JPanel();
@@ -43,6 +95,7 @@ public class Vista extends JFrame {
         leftPanel.add(new JLabel("Palabra:"), gbc);
 
         textField = new JTextField(10);
+        ((AbstractDocument) textField.getDocument()).setDocumentFilter(filter);
         gbc.gridy = 1;
         leftPanel.add(textField, gbc);
 
@@ -93,10 +146,20 @@ public class Vista extends JFrame {
         rightPanel.add(botonSolucion, BorderLayout.SOUTH);
 
         areaSopa = new JTextPane();
-        areaSopa.setFont(new Font("Monospaced", Font.PLAIN, 28));
+        areaSopa.setFont(new Font("Monospaced", Font.PLAIN, 32));
         areaSopa.setEditable(false);
-        JScrollPane textScrollPane = new JScrollPane(areaSopa);
 
+        // Crear un panel intermedio para centrar el JTextPane
+        JPanel centerPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints centerGbc = new GridBagConstraints();
+        centerGbc.gridx = 0;
+        centerGbc.gridy = 0;
+        centerGbc.anchor = GridBagConstraints.CENTER;
+        centerPanel.add(areaSopa, centerGbc);
+        centerPanel.setBackground(Color.WHITE);
+
+        // Crear un panel de scroll para el JTextPane
+        JScrollPane textScrollPane = new JScrollPane(centerPanel);
         rightPanel.add(textScrollPane, BorderLayout.CENTER);
 
         add(rightPanel, BorderLayout.CENTER);
@@ -114,6 +177,7 @@ public class Vista extends JFrame {
                     Element element = doc.getCharacterElement(offset);
                     AttributeSet as = element.getAttributes();
                     Color currentColor = StyleConstants.getForeground(as);
+                    String selectedText = doc.getText(offset, 1).trim(); // Trim to avoid spaces
 
                     // Create a new style
                     SimpleAttributeSet newStyle = new SimpleAttributeSet();
@@ -122,20 +186,146 @@ public class Vista extends JFrame {
                         StyleConstants.setForeground(newStyle, Color.BLACK);
                         StyleConstants.setBold(newStyle, false);
                         StyleConstants.setItalic(newStyle, false);
+
+                        // Remove the letter from the selected list if it's being deselected
+                        if (!selectedText.isEmpty()) {
+                            selectedLetters.remove((Character) selectedText.charAt(0));
+                        }
                     } else {
                         // Change to red color and make it bold and italic
                         StyleConstants.setForeground(newStyle, Color.RED);
                         StyleConstants.setBold(newStyle, true);
                         StyleConstants.setItalic(newStyle, true);
+
+                        // Add the selected letter to the list
+                        if (!selectedText.isEmpty()) {
+                            selectedLetters.add(selectedText.charAt(0));
+                        }
                     }
 
                     // Apply the new style to the letter
                     doc.setCharacterAttributes(offset, 1, newStyle, false);
+
+                    // Print the current selection
+                    StringBuilder sb = new StringBuilder();
+                    for (Character c : selectedLetters) {
+                        sb.append(c);
+                    }
+                    System.out.println("Selected letters: " + sb.toString());
+
+                    // Check if the selected letters form a word in the list
+                    checkForCompleteWord();
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
             }
         });
+
+        generarSopa.addActionListener(e -> startNewGame());
+
+    }
+
+    private void resetTimer() {
+        if (timer != null) {
+            timer.stop();
+        }
+        secondsElapsed = 0;
+        timerLabel.setText("Tiempo: 00:00");
+    }
+
+ private void checkIfGameCompleted() {
+    boolean allWordsFound = true;
+    for (int i = 0; i < listModel.size(); i++) {
+        String word = listModel.getElementAt(i);
+        if (!word.startsWith("<html><b><strike>")) {
+            allWordsFound = false;
+            break;
+        }
+    }
+
+    if (allWordsFound) {
+        stopTimer(); // Detener el temporizador al completar el juego
+        int minutes = secondsElapsed / 60;
+        int seconds = secondsElapsed % 60;
+        String timeTaken = String.format("%d minutos y %d segundos", minutes, seconds);
+
+        // Determinar el nivel de dificultad
+        String difficultyLevel;
+        int numWords = listModel.size();
+        if (numWords <= 5) {
+            difficultyLevel = "Fácil";
+        } else if (numWords <= 10) {
+            difficultyLevel = "Medio";
+        } else {
+            difficultyLevel = "Difícil";
+        }
+
+        String message = "¡Juego completado en " + timeTaken + "!\nNivel: " + difficultyLevel;
+        JOptionPane.showMessageDialog(this, message, "Felicidades", JOptionPane.INFORMATION_MESSAGE);
+    }
+}
+
+
+    private void startTimer() {
+        timer = new Timer(1000, e -> {
+            secondsElapsed++;
+            elapsedTimeInSeconds++; // Incrementar el tiempo transcurrido
+            timerLabel.setText("Tiempo: " + formatTime(secondsElapsed));
+        });
+        timer.start();
+        updateTimerLabel();
+    }
+
+    private void updateTimerLabel() {
+        int minutes = secondsElapsed / 60;
+        int seconds = secondsElapsed % 60;
+        timerLabel.setText("Tiempo: " + String.format("%02d:%02d", minutes, seconds));
+
+        // Determinar el nivel de dificultad
+        String nivelDificultad;
+        if (listModel.size() <= 5) {
+            nivelDificultad = "Fácil";
+        } else if (listModel.size() <= 10) {
+            nivelDificultad = "Medio";
+        } else {
+            nivelDificultad = "Difícil";
+        }
+        timerLabel.setText("Tiempo: " + String.format("%02d:%02d", minutes, seconds) + "   Nivel: " + nivelDificultad);
+    }
+
+    private void stopTimer() {
+        if (timer != null) {
+            timer.stop();
+        }
+    }
+
+    private String formatTime(int seconds) {
+        int minutes = seconds / 60;
+        int secs = seconds % 60;
+        return String.format("%02d:%02d", minutes, secs);
+    }
+
+    private void checkForCompleteWord() {
+        StringBuilder sb = new StringBuilder();
+        for (Character c : selectedLetters) {
+            sb.append(c);
+        }
+        String formedWord = sb.toString();
+
+        // Check if the formed word is in the list
+        for (int i = 0; i < listModel.size(); i++) {
+            String word = listModel.getElementAt(i);
+            if (word.equals(formedWord) || word.equals("<html><b><strike>" + formedWord + "</strike></b></html>")) {
+                // Tachado, en negrita, rojo e itálico en la lista de palabras
+                listModel.set(i, "<html><b><strike><font color='red'><i>" + formedWord + "</i></font></strike></b></html>");
+                selectedLetters.clear();
+                break;
+
+            }
+        }
+
+        // Check if all words are found
+        checkIfGameCompleted();
     }
 
     public void limpiarResaltado(StyledDocument doc) {
@@ -146,7 +336,13 @@ public class Vista extends JFrame {
         doc.setCharacterAttributes(0, doc.getLength(), defaultStyle, true);
     }
 
-    private void resaltarOcurrenciasEnMatriz(String palabra, StyledDocument doc, String[][] matriz) {
+    private void startNewGame() {
+        resetTimer();
+        startTimer();
+        // Lógica para generar una nueva sopa de letras
+    }
+
+    public void resaltarOcurrenciasEnMatriz(String palabra, StyledDocument doc, String[][] matriz) {
         SimpleAttributeSet resaltado = new SimpleAttributeSet();
         StyleConstants.setForeground(resaltado, Color.RED);
         StyleConstants.setBold(resaltado, true);
@@ -156,8 +352,6 @@ public class Vista extends JFrame {
             int filas = matriz.length;
             int columnas = matriz[0].length;
             int palabraLongitud = palabra.length();
-            String contenido = areaSopa.getText();
-            String textoPlano = contenido.replaceAll("\\s+", "");
 
             // Horizontal de izquierda a derecha
             for (int i = 0; i < filas; i++) {
@@ -170,7 +364,7 @@ public class Vista extends JFrame {
                         }
                     }
                     if (encontrado) {
-                        int start = (i * columnas + j) * 2;
+                        int start = i * (columnas * 2 + 1) + j * 2;
                         for (int k = 0; k < palabraLongitud; k++) {
                             doc.setCharacterAttributes(start + k * 2, 1, resaltado, false);
                         }
@@ -189,7 +383,7 @@ public class Vista extends JFrame {
                         }
                     }
                     if (encontrado) {
-                        int start = (i * columnas + j - palabraLongitud + 1) * 2;
+                        int start = i * (columnas * 2 + 1) + (j - palabraLongitud + 1) * 2;
                         for (int k = 0; k < palabraLongitud; k++) {
                             doc.setCharacterAttributes(start + k * 2, 1, resaltado, false);
                         }
@@ -208,9 +402,9 @@ public class Vista extends JFrame {
                         }
                     }
                     if (encontrado) {
-                        int start = (i * columnas + j) * 2;
+                        int start = i * (columnas * 2 + 1) + j * 2;
                         for (int k = 0; k < palabraLongitud; k++) {
-                            doc.setCharacterAttributes(start + k * columnas * 2, 1, resaltado, false);
+                            doc.setCharacterAttributes(start + k * (columnas * 2 + 1), 1, resaltado, false);
                         }
                     }
                 }
@@ -227,9 +421,9 @@ public class Vista extends JFrame {
                         }
                     }
                     if (encontrado) {
-                        int start = ((i - palabraLongitud + 1) * columnas + j) * 2;
+                        int start = (i - palabraLongitud + 1) * (columnas * 2 + 1) + j * 2;
                         for (int k = 0; k < palabraLongitud; k++) {
-                            doc.setCharacterAttributes(start + k * columnas * 2, 1, resaltado, false);
+                            doc.setCharacterAttributes(start + k * (columnas * 2 + 1), 1, resaltado, false);
                         }
                     }
                 }
@@ -246,9 +440,9 @@ public class Vista extends JFrame {
                         }
                     }
                     if (encontrado) {
-                        int start = (i * columnas + j) * 2;
+                        int start = i * (columnas * 2 + 1) + j * 2;
                         for (int k = 0; k < palabraLongitud; k++) {
-                            doc.setCharacterAttributes(start + k * (columnas + 1) * 2, 1, resaltado, false);
+                            doc.setCharacterAttributes(start + k * (columnas * 2 + 3), 1, resaltado, false);
                         }
                     }
                 }
@@ -265,9 +459,9 @@ public class Vista extends JFrame {
                         }
                     }
                     if (encontrado) {
-                        int start = ((i - palabraLongitud + 1) * columnas + j - palabraLongitud + 1) * 2;
+                        int start = (i - palabraLongitud + 1) * (columnas * 2 + 1) + (j - palabraLongitud + 1) * 2;
                         for (int k = 0; k < palabraLongitud; k++) {
-                            doc.setCharacterAttributes(start + k * (columnas + 1) * 2, 1, resaltado, false);
+                            doc.setCharacterAttributes(start + k * (columnas * 2 + 3), 1, resaltado, false);
                         }
                     }
                 }
@@ -284,9 +478,9 @@ public class Vista extends JFrame {
                         }
                     }
                     if (encontrado) {
-                        int start = ((i - palabraLongitud + 1) * columnas + j) * 2;
+                        int start = (i - palabraLongitud + 1) * (columnas * 2 + 1) + j * 2;
                         for (int k = 0; k < palabraLongitud; k++) {
-                            doc.setCharacterAttributes(start + k * (columnas - 1) * 2, 1, resaltado, false);
+                            doc.setCharacterAttributes(start + k * (columnas * 2 - 1), 1, resaltado, false);
                         }
                     }
                 }
@@ -303,9 +497,9 @@ public class Vista extends JFrame {
                         }
                     }
                     if (encontrado) {
-                        int start = (i * columnas + j - palabraLongitud + 1) * 2;
+                        int start = i * (columnas * 2 + 1) + (j - palabraLongitud + 1) * 2;
                         for (int k = 0; k < palabraLongitud; k++) {
-                            doc.setCharacterAttributes(start + k * (columnas - 1) * 2, 1, resaltado, false);
+                            doc.setCharacterAttributes(start + k * (columnas * 2 - 1), 1, resaltado, false);
                         }
                     }
                 }
@@ -357,9 +551,8 @@ public class Vista extends JFrame {
 
     public void setTextAreaContent(String content) {
         areaSopa.setText(content);
-        System.out.println("Contenido establecido en JTextPane: " + content);
     }
-    
+
     public void addWordToList(String word) {
         listModel.addElement(word);
     }

@@ -44,7 +44,7 @@ public class Modelo {
     public void crearTabla() {
         try {
             // Preparar la consulta SQL para crear la tabla correspondiente
-            String sql = "CREATE TABLE IF NOT EXISTS palabras (palabra VARCHAR(15) UNIQUE)";
+            String sql = "CREATE TABLE IF NOT EXISTS palabras (palabra VARCHAR(10) UNIQUE)";
             PreparedStatement statement = connection.prepareStatement(sql);
             // Ejecutar la consulta SQL para crear la tabla
             statement.executeUpdate();
